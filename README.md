@@ -1,9 +1,9 @@
-# \[Group name\]
+# \JAKKI[\]
 
 **Group members:**
-- Emil Henry Erbas
-- Jeppe Vanderhaegen
-- Jacob Vestergaard
+- Emil Henry Erbas - rmj923
+- Jeppe Vanderhaegen - wlr139
+- Jacob Vestergaard - gcb906
 
 This repository contains  
 1. Inaugural project. 
