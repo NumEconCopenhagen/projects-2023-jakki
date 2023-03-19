@@ -20,15 +20,15 @@ class householdClass:
         par.omega = 0.5
 
         # Household production
-        par.alpha_vec = [0.25, 0.50, 0.75]
-        par.sigma_vec = [0.5, 1.0, 1.5]
+        par.alpha = [0.25, 0.5, 0.75]
+        par.sigma = [0.5, 1.0, 1.5]
 
         # Wages
         par.wageF = 1
         par.wageM = 1
         par.wF_vec = np.linspace(0.8,1.2,5)
 
-        #Solution
+        # Solution
         sol.LM_vec = np.zeros(par.wF_vec.size)
         sol.HM_vec = np.zeros(par.wF_vec.size)
         sol.LF_vec = np.zeros(par.wF_vec.size)
@@ -43,6 +43,11 @@ class householdClass:
         C = par.wageM*LM + par.wageF*LF
         
         # Home production
+        if par.sigma == 1:
+            H = HM**(1-par.alpha)*HF**par.alpha
+        elif par.sigma == 0:
+            H = min(HM,HF)
+        else:
             H = ((1-par.alpha)*HM**(par.sigma-1/par.sigma)+par.alpha*HF**(par.sigma-1/par.sigma))**(par.sigma/par.sigma-1)
 
         # Total consumption
@@ -95,3 +100,5 @@ class householdClass:
                 print(f'{k} = {v:6.4f}')
 
         return opt
+     
+        
