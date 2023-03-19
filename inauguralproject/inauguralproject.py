@@ -21,7 +21,7 @@ class householdClass:
 
         # Household production
         par.alpha = 0.5
-        par.sigma = 1
+        par.sigma = 1.5
 
         # Wages
         par.wageF = 1
@@ -70,9 +70,9 @@ class householdClass:
         
         # All possible choices
         x = np.linspace(0,24,49)
-        LM,HM,LF,HF = np.meshgrid(x,x,x,x) # all combinations
-    
-        LM = LM.ravel() # vector
+        LM,HM,LF,HF = np.meshgrid(x,x,x,x)
+        
+        LM = LM.ravel() 
         HM = HM.ravel()
         LF = LF.ravel()
         HF = HF.ravel()
