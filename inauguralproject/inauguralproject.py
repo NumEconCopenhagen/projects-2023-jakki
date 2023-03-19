@@ -20,8 +20,8 @@ class householdClass:
         par.omega = 0.5
 
         # Household production
-        par.alpha = 0.5
-        par.sigma = 1
+        par.alpha = 0.6
+        par.sigma = 1.25
 
         # Wages
         par.wageF = 1
