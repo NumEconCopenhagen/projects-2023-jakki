@@ -20,8 +20,8 @@ class householdClass:
         par.omega = 0.5
 
         # Household production
-        par.alpha = 0.5
-        par.sigma = 1.5
+        par.alpha_vec = 0.5
+        par.sigma_vec = 1.5
 
         # Wages
         par.wageF = 1
@@ -98,3 +98,34 @@ class householdClass:
                 print(f'{k} = {v:6.4f}')
 
         return opt
+    
+    def plot_HF_HM(self):
+        par = self.par
+        sol = self.sol
+
+        fig, axs = plt.subplots(3, sharex=True, sharey=True)
+
+        # Loop over alpha and sigma
+        for i, alpha in enumerate([0.25, 0.5, 0.75]):
+            for j, sigma in enumerate([0.5, 1.0, 1.5]):
+
+                # Update parameters
+                par.alpha = alpha
+                par.sigma = sigma
+
+                # Solve model
+                opt = self.solve_discrete()
+
+                # store results in lists
+                sol.HF_vec[i, j] = opt.HF
+                sol.HM_vec[i, j] = opt.HM
+
+            # plot results
+            axs[i].plot(sol.HM_vec[i,:], sol.HF_vec[i,:])
+            axs[i].set(title=f'alpha = {alpha:.2f}')
+
+        # Set common labels
+        fig.text(0.5, 0.04, 'HM', ha='center')
+        fig.text(0.04, 0.5, 'HF', va='center', rotation='vertical')
+
+        plt.show()
