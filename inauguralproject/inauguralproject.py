@@ -2,6 +2,7 @@ from types import SimpleNamespace
 
 import numpy as np
 from scipy import optimize
+from scipy.optimize import minimize
 
 import pandas as pd 
 import matplotlib.pyplot as plt
@@ -20,8 +21,8 @@ class householdClass:
         par.omega = 0.5
 
         # Household production
-        par.alpha = 0.6
-        par.sigma = 1.25
+        par.alpha = 0.25
+        par.sigma = 1
 
         # Wages
         par.wageF = 1
@@ -100,5 +101,48 @@ class householdClass:
                 print(f'{k} = {v:6.4f}')
 
         return opt
-     
+    
+    def solve_continuous(self, do_print=False):
         
+        par = self.par
+        sol = self.sol
+        
+        # Define the objective function to be minimized
+        def objective(x):
+            LM, HM, LF, HF = x
+            return -self.calc_utility(LM, HM, LF, HF)
+        
+        # Define the constraint functions
+        def constraint1(x):
+            LM, HM, LF, HF = x
+            return 24 - (LM + HM)
+        
+        def constraint2(x):
+            LM, HM, LF, HF = x
+            return 24 - (LF + HF)
+        
+        # Define the initial guess for the decision variables
+        x0 = [12, 12, 12, 12]
+        
+        # Define the bounds for the decision variables
+        bounds = ((0, 24), (0, 24), (0, 24), (0, 24))
+        
+        # Define the constraints
+        cons = [{'type': 'ineq', 'fun': constraint1},
+                {'type': 'ineq', 'fun': constraint2}]
+        
+        # Solve the optimization problem
+        opt = minimize(objective, x0, method='SLSQP', bounds=bounds, constraints=cons)
+        
+        # Save the optimal decision variables
+        sol.LM = opt.x[0]
+        sol.HM = opt.x[1]
+        sol.LF = opt.x[2]
+        sol.HF = opt.x[3]
+        
+        # Print the results
+        if do_print:
+            for k, v in sol.__dict__.items():
+                print(f"{k} = {v:6.4f}")
+        
+        return sol
