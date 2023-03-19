@@ -146,3 +146,20 @@ class householdClass:
                 print(f"{k} = {v:6.4f}")
         
         return sol
+    
+    def run_regression(self):
+        """ run regression """
+
+        par = self.par
+        sol = self.sol
+
+        x = np.log(par.wF_vec)
+        y = [-0.8754687373538999, -0.9555114450274363, -1.1786549963416462, -1.1786549963416462, -1.252762968495368]
+        A = np.vstack([np.ones(x.size),x]).T
+        sol.beta0,sol.beta1 = np.linalg.lstsq(A,y,rcond=None)[0]
+
+        print("Intercept (beta0):", sol.beta0)
+        print("Coefficient (beta1):", sol.beta1)
+    
+    def estimate(self,alpha=None,sigma=None):
+        """ estimate alpha and sigma """
