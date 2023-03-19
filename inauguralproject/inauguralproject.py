@@ -58,3 +58,40 @@ class householdClass:
         disutility = par.nu*(TM**epsilon_/epsilon_+TF**epsilon_/epsilon_)
         
         return utility - disutility
+
+    def solve_discrete(self,do_print=False):
+    
+        par = self.par
+        sol = self.sol
+        opt = SimpleNamespace()
+        
+        # All possible choices
+        x = np.linspace(0,24,49)
+        LM,HM,LF,HF = np.meshgrid(x,x,x,x) # all combinations
+    
+        LM = LM.ravel() # vector
+        HM = HM.ravel()
+        LF = LF.ravel()
+        HF = HF.ravel()
+
+        # Calculate utility
+        u = self.calc_utility(LM,HM,LF,HF)
+    
+        # Set to minus infinity if constraint is broken
+        I = (LM+HM > 24) | (LF+HF > 24) 
+        u[I] = -np.inf
+    
+        # Find maximizing argument
+        j = np.argmax(u)
+        
+        opt.LM = LM[j]
+        opt.HM = HM[j]
+        opt.LF = LF[j]
+        opt.HF = HF[j]
+
+        # e. print
+        if do_print:
+            for k,v in opt.__dict__.items():
+                print(f'{k} = {v:6.4f}')
+
+        return opt
