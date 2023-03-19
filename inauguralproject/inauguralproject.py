@@ -43,7 +43,10 @@ class householdClass:
         C = par.wageM*LM + par.wageF*LF
         
         # Home production
-        H = HM**(1-par.alpha)*HF**par.alpha
+        if par.sigma == 1:
+            H = HM**(1-par.alpha)*HF**par.alpha
+        else:
+            H = ((1-par.alpha)HM**(par.sigma-1/par.sigma)+par.alpha*HF**(par.sigma-1/par.sigma))**(par.sigma/par.sigma-1)
 
         # Total consumption
         Q = C**par.omega*H**(1-par.omega)
@@ -89,7 +92,7 @@ class householdClass:
         opt.LF = LF[j]
         opt.HF = HF[j]
 
-        # e. print
+        # Print results
         if do_print:
             for k,v in opt.__dict__.items():
                 print(f'{k} = {v:6.4f}')
