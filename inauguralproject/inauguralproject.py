@@ -44,14 +44,12 @@ class householdClass:
         C = par.wageM*LM + par.wageF*LF
         
         # Home production
-        power = (par.sigma - 1)/par.sigma
-
         if par.sigma == 1:
             H = HM**(1-par.alpha)*HF**par.alpha
         elif par.sigma == 0:
-            H = np.fmin(HM, HF)
-        else: 
-            H = (  (1-par.alpha)  * (HM+0.00000000001) **(power) + par.alpha * (HF+0.0000000001)**(power)  )**(1/power)
+            H = min(HM,HF)
+        else:
+            H = ((1-par.alpha)*HM**(par.sigma-1/par.sigma)+par.alpha*HF**(par.sigma-1/par.sigma))**(par.sigma/par.sigma-1)
 
         # Total consumption
         Q = C**par.omega*H**(1-par.omega)
@@ -165,3 +163,6 @@ class householdClass:
     
     def estimate(self,alpha=None,sigma=None):
         """ estimate alpha and sigma """
+
+
+#2123 
