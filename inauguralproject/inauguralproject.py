@@ -163,6 +163,3 @@ class householdClass:
     
     def estimate(self,alpha=None,sigma=None):
         """ estimate alpha and sigma """
-
-
-#2123 
