@@ -21,7 +21,7 @@ class householdClass:
         par.omega = 0.5
 
         # Household production
-        par.alpha = 0.25
+        par.alpha = 0.5
         par.sigma = 1
 
         # Wages
@@ -110,6 +110,7 @@ class householdClass:
         
         par = self.par
         sol = self.sol
+        opt = SimpleNamespace()
         
         # Define the objective function to be minimized
         def objective(x):
@@ -126,7 +127,7 @@ class householdClass:
             return 24 - (LF + HF)
         
         # Define the initial guess for the decision variables
-        x0 = [12, 12, 12, 12]
+        x0 = [6, 6, 6, 6]
         
         # Define the bounds for the decision variables
         bounds = ((0, 24), (0, 24), (0, 24), (0, 24))
@@ -135,21 +136,15 @@ class householdClass:
         cons = [{'type': 'ineq', 'fun': constraint1},
                 {'type': 'ineq', 'fun': constraint2}]
         
-        # Solve the optimization problem
-        opt = minimize(objective, x0, method='SLSQP', bounds=bounds, constraints=cons)
+        #c. Solver 
+        solution = optimize.minimize(objective, x0, method="nelder-mead", bounds=bounds, constraints=cons)
+
+        opt.LM = solution.x[0]
+        opt.HM = solution.x[1]
+        opt.LF = solution.x[2]
+        opt.HF = solution.x[3]
         
-        # Save the optimal decision variables
-        sol.LM = opt.x[0]
-        sol.HM = opt.x[1]
-        sol.LF = opt.x[2]
-        sol.HF = opt.x[3]
-        
-        # Print the results
-        if do_print:
-            for k, v in sol.__dict__.items():
-                print(f"{k} = {v:6.4f}")
-        
-        return sol
+        return opt
     
     def run_regression(self):
         """ run regression """
