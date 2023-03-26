@@ -152,13 +152,14 @@ class householdClass:
         par = self.par
         sol = self.sol
 
-        x = np.log(par.wF_vec/par.wM)
+        x = np.log(par.wF_vec/par.wageM)
         y = np.log(sol.HF_vec/sol.HM_vec)
         A = np.vstack([np.ones(x.size),x]).T
         sol.beta0,sol.beta1 = np.linalg.lstsq(A,y,rcond=None)[0]
 
         print("Intercept (beta0):", sol.beta0)
         print("Coefficient (beta1):", sol.beta1)
+        return sol.beta0, sol.beta1 
 
     def estimate(self,alpha=None,sigma=None):
         """ estimate alpha and sigma """
@@ -167,21 +168,18 @@ class householdClass:
         opt = SimpleNamespace
 
         def erterm(x):
-            sigma, alpha =x.ravel()
+            sigma, alpha = x.ravel()
             par.alpha = alpha
             par.sigma = sigma 
             self.solve_wF_vec() 
-            sol = self.run_regression() 
-            erterm = (sol.beta0 - par.beta0_target)**2 +(sol.beta1 - par.beta1_target)**2 
+            beta0, beta1 = self.run_regression() 
+            erterm = (beta0 - par.beta0_target)**2 + (beta1 - par.beta1_target)**2 
             return erterm
         
-        #We then want to minimize the beta function. For this we use the Nelder-Mead method
-        bounds=[(0.000001,0.99999), (0.0001,10)]
-        solution = optimize.minimize(erterm,[alpha,sigma],method='Nelder-Mead', bounds=bounds)
+        solution = optimize.minimize(erterm,[alpha,sigma],method='Nelder-Mead', bounds=[(0.001,0.999), (0.001,10)])
         
         opt.alpha = solution.x[0]
         opt.sigma = solution.x[1]
-        erterm = (sol.beta0 - par.beta0_target)**2 +(sol.beta1 - par.beta1_target)**2 
-        opt.erterm = erterm
+        opt.erterm = solution.fun
 
         return opt
