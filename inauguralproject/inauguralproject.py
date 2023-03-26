@@ -170,8 +170,6 @@ class householdClass:
             sigma, alpha =x.ravel()
             par.alpha = alpha
             par.sigma = sigma 
-    
-
             self.solve_wF_vec() 
             sol = self.run_regression() 
             erterm = (sol.beta0 - par.beta0_target)**2 +(sol.beta1 - par.beta1_target)**2 
