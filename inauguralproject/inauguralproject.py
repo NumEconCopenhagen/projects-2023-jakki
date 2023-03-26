@@ -162,5 +162,28 @@ class householdClass:
 
     def estimate(self,alpha=None,sigma=None):
         """ estimate alpha and sigma """
+        par = self.par
+        sol = self.sol
+        opt = SimpleNamespace
 
+        def beta(x)
+            sigma, alpha =x.ravel()
+            par.alpha = alpha
+            par.sigma = sigma 
+    
 
+            self.solve_wF_vec() 
+            sol = self.run_regression() 
+            beta = (sol.beta0 - par.beta0_target)**2 +(sol.beta1 - par.beta1_target)**2 
+            return beta 
+        
+        #We then want to minimize the beta function. For this we use the Nelder-Mead method
+        bounds=[(0.000001,0.99999), (0.0001,10)]
+        solution = optimize.minimize(beta,[alpha,sigma],method='Nelder-Mead', bounds=bounds)
+        
+        opt.alpha = solution.x[0]
+        opt.sigma = solution.x[1]
+        beta = (sol.beta0 - par.beta0_target)**2 +(sol.beta1 - par.beta1_target)**2 
+        opt.beta = beta
+
+        return opt
