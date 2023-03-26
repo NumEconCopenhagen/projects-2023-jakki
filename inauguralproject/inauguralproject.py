@@ -146,7 +146,7 @@ class householdClass:
         
         return opt
     
-   def run_regression(self):
+    def run_regression(self):
         """ run regression """
 
         par = self.par
