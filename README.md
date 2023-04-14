@@ -1,4 +1,4 @@
-# \JAKKI[\]
+# JAKKI
 
 **Group members:**
 - Emil Henry Erbas - rmj923
