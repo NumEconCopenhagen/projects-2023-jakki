@@ -137,7 +137,7 @@ class householdClass:
                 {'type': 'ineq', 'fun': constraint2}]
         
         #c. Solver 
-        solution = optimize.minimize(objective, x0, method="nelder-mead", bounds=bounds, constraints=cons)
+        solution = optimize.minimize(objective, x0, method="Nelder-Mead", bounds=bounds, constraints=cons)
 
         opt.LM = solution.x[0]
         opt.HM = solution.x[1]
@@ -165,15 +165,14 @@ class householdClass:
         """ estimate alpha and sigma """
         par = self.par
         sol = self.sol
-        opt = SimpleNamespace
+        opt = SimpleNamespace()
 
         def erterm(x):
             sigma, alpha = x.ravel()
             par.alpha = alpha
-            par.sigma = sigma 
-            self.solve_wF_vec() 
-            beta0, beta1 = self.run_regression() 
-            erterm = (beta0 - par.beta0_target)**2 + (beta1 - par.beta1_target)**2 
+            par.sigma = sigma
+            self.run_regression() 
+            erterm = (sol.beta0 - par.beta0_target)**2 + (sol.beta1 - par.beta1_target)**2 
             return erterm
         
         solution = optimize.minimize(erterm,[alpha,sigma],method='Nelder-Mead', bounds=[(0.001,0.999), (0.001,10)])
