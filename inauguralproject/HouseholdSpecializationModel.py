@@ -212,22 +212,19 @@ class HouseholdSpecializationModelClass:
         opt = self.opt
 
         if extend==True:
-            #We make a new function, which defines the dif "different"
             def dif(x):
                 par = self.par
                 opt = self.opt
                 par.sigma = x[0]
-                par.epsilon_M = x[1]
-                par.epsilon_F = x[2]
+                par.epsilon_F = x[1]
                 self.solve_wF_vec()
                 self.run_regression()
                 dif = (opt.beta0 - par.beta0_target)**2 + (opt.beta1 - par.beta1_target)**2
                 return dif
         
-            result = optimize.minimize(dif, [sigma,epsilon_F,epsilon_M], bounds=[(0.01,2.0),(0.01,2.0),(0.01,2.0)], method='Nelder-Mead')
+            result = optimize.minimize(dif, [sigma,epsilon_F], bounds=[(0.01,5.0),(0.01,5.0)], method='Nelder-Mead')
             opt.sigma = result.x[0]
-            opt.epsilon_M = result.x[1]
-            opt.epsilon_F = result.x[2]
+            opt.epsilon_F = result.x[1]
 
             return opt
         
