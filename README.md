@@ -3,7 +3,7 @@
 **Group members:**
 - Emil Henry Erbas - rmj923
 - Jeppe Vanderhaegen - wlr139
-- Jacob Vestergaard - gcb906
+- Jacob Grenaa Vestergaard - gcb906
 
 This repository contains  
 1. Inaugural project. 
