@@ -1,4 +1,4 @@
-# Model analysis project
+# Data analysis project
 
 Our project is titled **PROJECT TITLE** and is about EXPLAIN.
 
