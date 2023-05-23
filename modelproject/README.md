@@ -4,6 +4,6 @@ Our project is titled "AS-AD Model with a Floating Exchange Regime." It involves
 
 The **results** of the project can be seen from running [modelproject.ipynb](modelproject.ipynb).
 
-modelproject.py is also required to run and simulate the model.
+Classes and functions in this project are presented in [modelproject.py](modelproject.py).
 
 A standard Anaconda Python 3 installation is enough for this project.
