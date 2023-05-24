@@ -108,6 +108,7 @@ class HouseholdSpecializationModelClass: #We create a class to call upon in our 
         # d. Find maximizing argument and store solution
         j = np.argmax(u)
         
+        #We store the solutions attained
         opt.LM = LM[j]
         opt.HM = HM[j]
         opt.LF = LF[j]
@@ -120,20 +121,20 @@ class HouseholdSpecializationModelClass: #We create a class to call upon in our 
         par = self.par
         opt = self.opt
 
-        def objective(x):
+        def objective(x): #"Imports" the utility function into the continous solver
             return self.calc_utility(x[0], x[1], x[2], x[3])
         
-        obj = lambda x: - objective(x)
-        constraints = ({'type': 'ineq', 'fun': lambda x: (24 - (x[0]+x[1]) ) and (24 - (x[2]+x[3]))})
-        guess = [4]*4
-        bounds = [(0, 24)]*4
+        obj = lambda x: - objective(x) #Creating a new objective, which takes the negative of the utility function in order to maximize
+        constraints = ({'type': 'ineq', 'fun': lambda x: (24 - (x[0]+x[1]) ) and (24 - (x[2]+x[3]))}) #Setting constraints in the model by defining the type and the function
+        guess = [4]*4 #Our initial guess the model will start with
+        bounds = [(0, 24)]*4 #Boundaries for the model 
      # d. find maximizing argument
         solution = optimize.minimize(obj,
                             guess,
                             method='Nelder-Mead',
                             bounds=bounds,
                             constraints=constraints)
-    
+        #Storing the solutions
         opt.LM = solution.x[0]
         opt.HM = solution.x[1]
         opt.LF = solution.x[2]
@@ -147,20 +148,20 @@ class HouseholdSpecializationModelClass: #We create a class to call upon in our 
         par = self.par
         opt = self.opt
 
-        # a. setting up vectors to store results
+        # a. Creating vectors to store later results. These are initialized by 0
         opt.logHFHM = np.zeros(par.wF_vec.size)
         opt.HF_vec = np.zeros(par.wF_vec.size)
         opt.HM_vec = np.zeros(par.wF_vec.size)
         opt.LF_vec = np.zeros(par.wF_vec.size)
         opt.LM_vec = np.zeros(par.wF_vec.size)
 
-        # b. loop over wF
+        # b. loop over wF 
         for i,wF in enumerate(par.wF_vec):
             par.wF = wF
-
+            #We call the contionous function to find the optimal level
             opt = self.solve_continous()
             
-            # ii. store results
+            # ii. We then store the results 
             opt.logHFHM[i] = np.log(opt.HF/opt.HM)
             opt.HM_vec[i] = opt.HM
             opt.HF_vec[i] = opt.HF
@@ -174,10 +175,10 @@ class HouseholdSpecializationModelClass: #We create a class to call upon in our 
         par = self.par
         opt = self.opt
 
-        x = np.log(par.wF_vec)
-        y = np.log(opt.HF_vec/opt.HM_vec)
-        A = np.vstack([np.ones(x.size),x]).T
-        opt.beta0,opt.beta1 = np.linalg.lstsq(A,y,rcond=None)[0]
+        x = np.log(par.wF_vec) #Computes the logarithm of the female wage
+        y = np.log(opt.HF_vec/opt.HM_vec) #Computes the logarithm of the relationship between hours for men and female 
+        A = np.vstack([np.ones(x.size),x]).T #Creating a matrix and then transposing it
+        opt.beta0,opt.beta1 = np.linalg.lstsq(A,y,rcond=None)[0] #We then perform a least squared regression.
     
     def estimate(self,do_print=False):
         
@@ -185,17 +186,17 @@ class HouseholdSpecializationModelClass: #We create a class to call upon in our 
         opt = self.opt
 
         # Target function
-        def target(x):
-                par.alpha, par.sigma = x
-                self.solve_wF_vec()
-                self.run_regression()
-                opt.residual = (opt.beta0-par.beta0_target)**2  + (opt.beta1-par.beta1_target)**2
+        def target(x): 
+                par.alpha, par.sigma = x 
+                self.solve_wF_vec() 
+                self.run_regression() #Calls upon the regression 
+                opt.residual = (opt.beta0-par.beta0_target)**2  + (opt.beta1-par.beta1_target)**2 #Calculating the squared the residual
                 return opt.residual
             
         # Initial start guesses for Nelder-Mead Optimization
-        x0=[0.5,0.1]
+        x0=[0.5,0.1] 
         bounds = ((0,1),(0,1))
-
+        #minimizing
         solution = optimize.minimize(target,
                                         x0,
                                         method='Nelder-Mead',
@@ -211,23 +212,24 @@ class HouseholdSpecializationModelClass: #We create a class to call upon in our 
                 print(f'\u03C3_opt = {opt.sigma:6.4f}')
                 print(f'Residual_opt = {opt.residual:6.4f}')
     
+    #Extending the model with epsilon_F and epsilon_M
     def estimate_extended(self,sigma=None,epsilon_M=None,epsilon_F=None,extend=True):
         par = self.par
         opt = self.opt
 
         if extend==True:
             def dif(x):
-                par = self.par
-                opt = self.opt
-                par.sigma = x[0]
+                par = self.par #Calls upon the parameters
+                opt = self.opt #Calls upon the optimal values 
+                par.sigma = x[0] 
                 par.epsilon_F = x[1]
-                self.solve_wF_vec()
-                self.run_regression()
-                dif = (opt.beta0 - par.beta0_target)**2 + (opt.beta1 - par.beta1_target)**2
+                self.solve_wF_vec() #Calls upon female wage solver to solve 
+                self.run_regression() #Runs the regression 
+                dif = (opt.beta0 - par.beta0_target)**2 + (opt.beta1 - par.beta1_target)**2 #Finds the difference
                 return dif
         
-            result = optimize.minimize(dif, [sigma,epsilon_F], bounds=[(0.01,5.0),(0.01,5.0)], method='Nelder-Mead')
-            opt.sigma = result.x[0]
+            result = optimize.minimize(dif, [sigma,epsilon_F], bounds=[(0.01,5.0),(0.01,5.0)], method='Nelder-Mead') #Minimizes sigma and epsilon_f
+            opt.sigma = result.x[0] #Stores the results
             opt.epsilon_F = result.x[1]
 
             return opt
@@ -237,7 +239,7 @@ class HouseholdSpecializationModelClass: #We create a class to call upon in our 
                 par = self.par
                 opt = self.opt
                 par.sigma = x[0]
-                self.solve_wF_vec()
+                self.solve_wF_vec() 
                 self.run_regression()
                 dif = (opt.beta0 - par.beta0_target)**2 + (opt.beta1 - par.beta1_target)**2  
                 return dif
