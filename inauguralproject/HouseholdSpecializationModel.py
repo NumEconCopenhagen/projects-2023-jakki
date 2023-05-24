@@ -211,7 +211,7 @@ class HouseholdSpecializationModelClass: #We create a class to call upon in our 
                 print(f'\u03C3_opt = {opt.sigma:6.4f}')
                 print(f'Residual_opt = {opt.residual:6.4f}')
     
-    def estimate_extended(self,sigma=None,epsilon_M=None,epsilon_F=None,extend=True):
+    def estimate_extended(self,sigma=None,epsilon_M=None,epsilon_F=None,alpha=0.5,extend=True):
         par = self.par
         opt = self.opt
 
@@ -242,7 +242,7 @@ class HouseholdSpecializationModelClass: #We create a class to call upon in our 
                 dif = (opt.beta0 - par.beta0_target)**2 + (opt.beta1 - par.beta1_target)**2  
                 return dif
         
-            result = optimize.minimize(dif, [sigma], bounds=[(0.01,2.0)], method='Nelder-Mead')
+            result = optimize.minimize(dif, [sigma], bounds=[(0.2,5.0)], method='Nelder-Mead')
             opt.sigma = result.x[0]
 
             return opt
