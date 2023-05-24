@@ -7,16 +7,16 @@ from scipy import optimize
 import pandas as pd 
 import matplotlib.pyplot as plt
 
-class HouseholdSpecializationModelClass:
+class HouseholdSpecializationModelClass: #We create a class to call upon in our Notebook. 
 
-    def __init__(self):
+    def __init__(self): #We use the init function to set up parameters, which we use through the assignment.
         """ setup model """
 
-        # a. create namespaces
-        par = self.par = SimpleNamespace()
-        opt = self.opt = SimpleNamespace()
+        # a. create namespaces. This makes us able to work in a dot.variable field. Furthermore, we create different variabletypes. 
+        par = self.par = SimpleNamespace() #A type for parameters 
+        opt = self.opt = SimpleNamespace() #A type for optimazion results 
 
-        # b. preferences
+        # b. We define our preference parameters using the par type. 
         par.rho = 2.0
         par.nu_M = 0.001
         par.nu_F = 0.001
@@ -24,84 +24,88 @@ class HouseholdSpecializationModelClass:
         par.epsilon_F = 1.0
         par.omega = 0.5 
 
-        # c. household production
+        # c. Household production 
         par.alpha = 0.5
         par.sigma = 1.0
 
-        # d. wages
+        # d. We define wages 
         par.wM = 1.0
         par.wF = 1.0
-        par.wF_vec = np.linspace(0.8,1.2,5)
+        par.wF_vec = np.linspace(0.8,1.2,5)#Creates a vector for womens wages from 0.8-1.2 with 5 equally spaced observations. 
 
         # e. targets
         par.beta0_target = 0.4
         par.beta1_target = -0.1
 
-        # f. solution
+        # f. We define vectors which the goal of filling them with optimezed model results later. From the beginning, they are filled with 0
         opt.LM_vec = np.zeros(par.wF_vec.size)
         opt.HM_vec = np.zeros(par.wF_vec.size)
         opt.LF_vec = np.zeros(par.wF_vec.size)
         opt.HF_vec = np.zeros(par.wF_vec.size)
-
+        #Initialize the betas, which we want to compute. Again, these are initialized as 0
         opt.beta0 = np.nan
         opt.beta1 = np.nan
         opt.residual = np.nan
 
-    def calc_utility(self,LM,HM,LF,HF):
-     
+    def calc_utility(self,LM,HM,LF,HF):  
+        # Attributes the simplenamespace
         par = self.par
         opt = self.opt
 
-        # a. consumption of market goods
+        # a. Consumption of market goods
         C = par.wM*LM + par.wF*LF
 
-        # b. home production
-        with np.errstate(divide='ignore', invalid='ignore'):
-            if par.sigma == 1:
-                H = HM**(1-par.alpha)*HF**par.alpha
-            elif par.sigma == 0:
+        # b. Home production
+        with np.errstate(divide='ignore', invalid='ignore'): #We do not want divide with zero, obtain NaN etc. Therefore, we ignore these 
+            if par.sigma == 1: #For the case, when sigma = 1 
+                H = HM**(1-par.alpha)*HF**par.alpha 
+            elif par.sigma == 0: #For the case, when sigma = 0
                 H = np.minimum(HM,HF)
-            else:
+            else: #Otherwise this is the model. We use par. to call on the parameters set in the init function
                 H = ((1-par.alpha)*HM**((par.sigma-1)/par.sigma)+par.alpha*HF**((par.sigma-1)/par.sigma))**(par.sigma/(par.sigma-1))
         
-        # c. total consumption utility
+        # c. Total consumption utility
         Q = C**par.omega*H**(1-par.omega)
 
-        with np.errstate(invalid='ignore'):
-            utility = np.fmax(Q,1e-8)**(1-par.rho)/(1-par.rho)
+        with np.errstate(invalid='ignore'): #Again we ignore invalid computations, while calculating the utility. 
+            utility = np.fmax(Q,1e-8)**(1-par.rho)/(1-par.rho) #We find the max from 1e-8 and above to ensure the return of a apositive number
 
         # d. disutlity of work
         epsilon_F_ = 1+1/par.epsilon_F
         epsilon_M_ = 1+1/par.epsilon_M
         TM = LM+HM
         TF = LF+HF
-
-        disutility = par.nu_M*(TM**epsilon_M_/epsilon_M_)+par.nu_F*(TF**epsilon_F_/epsilon_F_)
+        #We then find the disutility of work:
+        disutility = par.nu_M*(TM**epsilon_M_/epsilon_M_)+par.nu_F*(TF**epsilon_F_/epsilon_F_) 
         
-        return utility - disutility
+        return utility - disutility 
 
-    def solve_discrete(self):
-        
+    def solve_discrete(self): #This function 
+        #Calling on parameters 
         par = self.par
         opt = self.opt
         
-        # a. all possible choices
-        x = np.linspace(0,24,49)
-        LM,HM,LF,HF = np.meshgrid(x,x,x,x) # all combinations
-    
+        # a. All possible choices
+        x = np.linspace(0,24,49) 
+        LM,HM,LF,HF = np.meshgrid(x,x,x,x) #Creating four arrays, one for each. This represent all possible combinations
+
+        #We then make the arrays into a singular line and overwriting them
         LM = LM.ravel()
         HM = HM.ravel()
         LF = LF.ravel()
         HF = HF.ravel()
 
-        # b. calculate utility
+        # b. We call upon the function created earlier and give it the vectors as inputs. 
         u = self.calc_utility(LM,HM,LF,HF)
     
         # c. set to minus infinity if constraint is broken
-        I = (LM+HM > 24) | (LF+HF > 24) # | is "or"
-        u[I] = -np.inf
+        I = (LM+HM > 24) | (LF+HF > 24) # | is "or". If the hours surpass 24. We get the notion back as True
+        #If the I variable is true, then the value will be set to negative infinite. 
+        #Setting it negative makes sure it will not be taking into consideration, as we only look at positive numbers
+        u[I] = -np.inf 
+        
     
-        # d. find maximizing argument and store solution
+        # d. Find maximizing argument and store solution
         j = np.argmax(u)
         
         opt.LM = LM[j]
