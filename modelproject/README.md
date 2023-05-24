@@ -6,4 +6,8 @@ The **results** of the project can be seen from running [modelproject.ipynb](mod
 
 Classes and functions in this project are presented in [modelproject.py](modelproject.py).
 
-A standard Anaconda Python 3 installation is enough for this project.
+A standard Anaconda Python 3 installation and the following packages are required to run this project: 
+from types import SimpleNamespace
+from scipy import optimize
+pandas
+numpy
