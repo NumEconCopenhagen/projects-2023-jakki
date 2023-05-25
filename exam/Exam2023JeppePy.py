@@ -70,18 +70,19 @@ class model2:
         opt = self.opt
         #Creating shocks 
         np.random.seed(117)
-        opt.epsilon = np.random.normal(-.5*par.sigma**2, par.sigma)
+        opt.epsilon = np.random.normal(-.5*par.sigma**2, par.sigma, size=par.time)
         return opt.epsilon 
     
     def calc_ex_post(self):
         #Calls on the params
         par = self.par
         opt = self.opt
-
+        
         for t in range(par.time):
             par.kappa = par.rho *np.log(par.kappaprev)+opt.epsilon[t]
             par.kappa = np.exp(par.kappa)
-            Profit = par.kappa * par.l **(1-par.eta)-par.wage*par.l - np.where(1 if par.l != par.lprev else 0)*par.iota
+            condition = par.l != par.lprev
+            Profit = par.kappa * par.l **(1-par.eta)-par.wage*par.l - np.where(condition, 1,0)*par.iota
             opt.ex_postval += par.rate**(-t)*Profit
             par.lprev = par.l
             par.kappaprev = par.kappa
