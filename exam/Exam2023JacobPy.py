@@ -2,7 +2,7 @@ from types import SimpleNamespace
 import numpy as np
 from scipy.optimize import minimize
 import math
-
+import matplotlib.pyplot as plt
 
 class ClassQ1:
 
@@ -41,6 +41,11 @@ class ClassQ1:
         result = minimize(self.calc_utility, x0=0.0, method='BFGS')
         return result.x
 
-
+    def optimal_labor_supply(self):
+        par = self.par
+        numerator = -par.kappa+math.sqrt(par.kappa**2+4*(par.alpha/par.nu)*par.omega_tilde**2)
+        denominator = 2*par.omega_tilde
+        return numerator / denominator
+    
 
 
