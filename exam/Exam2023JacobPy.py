@@ -3,6 +3,7 @@ import numpy as np
 from scipy.optimize import minimize
 import math
 import matplotlib.pyplot as plt
+from scipy import optimize
 
 class ClassQ1:
 
@@ -17,11 +18,18 @@ class ClassQ1:
         par.nu = 1/(2*(16**2))
         par.omega = 1.0
         par.tau = 0.30
-        par.G = 1
+        par.G = 5
         par.omega_tilde = (1 - par.tau) * par.omega
         par.optimal_L_numerator = -par.kappa+math.sqrt(par.kappa**2+4*(par.alpha/par.nu)*par.omega_tilde**2)
         par.optimal_L_denominator = 2*par.omega_tilde
         par.optimal_L = par.optimal_L_numerator/par.optimal_L_denominator
+
+        # c. new parameters to Q5
+        par.sigma_set1 = 1.001
+        par.sigma_set2 = 1.5
+        par.rho_set1 = 1.001
+        par.rho_set2 = 1.5
+        par.epsilon = 1
 
     def calc_utility(self, L):
         par = self.par
@@ -46,6 +54,5 @@ class ClassQ1:
         numerator = -par.kappa+math.sqrt(par.kappa**2+4*(par.alpha/par.nu)*par.omega_tilde**2)
         denominator = 2*par.omega_tilde
         return numerator / denominator
-    
 
 
