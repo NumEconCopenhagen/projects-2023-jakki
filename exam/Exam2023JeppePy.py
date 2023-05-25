@@ -18,26 +18,31 @@ class ModelQ2:
         # Baseline parameters 
         par.eta = .5 
         par.wage = 1   
-        par.kappa = np.linspace(1,2,2)
+        par.kappa = [1.0,2.0]
         par.rho = .9
         par.iota = .01
         par.sigma = 0.1 
         par.rate = (1+0.01)**(1/12)
+        
 
         #Dynamic model parameters
         par.time = 120
         par.l0 = 0
-
+        par.kappaprev = 0
+        
         # Defining variables
         par.l = (((1-par.eta)*par.kappa)/par.wage)**(1/par.eta)
         par.y = par.l
         par.p = par.kappa*par.y**(-par.eta)
 
-        #Vectors to store results
-        opt.logkappa = np.zeros(par.time)
-        opt.H_val =np.zeros(par.time)    
+        #Storaging results
+        opt.epsilon = np.zeros(par.time)
+        opt.ex_postval
 
-    def function1(self):
+        #Vectors for storage 
+        opt.ex_postvals =[] 
+
+    def calculate_profit(self):
 
         #Calls on the Params
         par = self.par
@@ -59,24 +64,35 @@ class ModelQ2:
     def AR_shocks(self):
         #Calls on the params
         par = self.par
-        opt = self.opt 
-
-        for i in range(1,par.time):
-            par.kappa[i] = par.rho*np.log(par.kappa[i-1])+np.random.normal(-.5*par.sigma**2,par.sigma, par.time) 
-            opt.logkappa = np.log(par.kappa[i])
-
-        return opt.logkappa
+        opt = self.opt
+        #Creating shocks 
+        np.random.seed(117)
+        opt.epsilon = np.random.normal(-.5*par.sigma**2, par.sigma)
+        return opt.epsilon 
     
-    def functionH(self):
+    def calc_ex_post(self):
         #Calls on the params
         par = self.par
         opt = self.opt
 
-        for t in range(1, par.time):
-            par.l[t] = ((1-par.eta)*par.kappa[t]/par.wage)**(1/par.eta)
-            opt.H_val[t] = par.rate **(-t) * (par.kappa[t] * par.l[t]**(1-par.eta)-par.wage*par.l[t]-int(par.l[t]!= par.l[t-1])*par.iota)
+        for t in range(par.time):
+            par.kappa = par.rho *np.log(par.kappaprev)+opt.epsilon[t]
+            par.kappa = np.exp(par.kappa)
+            Profit = par.kappa * par.l **(1-par.eta)-par.wage*par.l-(1 if par.l != par.l0 else 0)*par.iota
+            opt.ex_postval += par.rate**(-t)*Profit
+            par.l0 = par.l
+            par.kappaprev = par.kappa
+    
+        for i in range(K):
+            opt.epsilon = self.AR_shocks()
+            opt.ex_postval = self.calc_ex_post()
+            opt.ex_postvals.append(opt.ex_postval)
 
-            #Then taking the mean 
+        H = np.mean(opt.ex_postvals)
+        print = print(f"The approximate ex ante expected value of the salon (H) is: {H}")
+        
+        return print
+    
     
 
 
