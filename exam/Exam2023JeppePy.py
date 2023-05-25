@@ -1,7 +1,8 @@
 import numpy as np
+from scipy.optimize import minimize_scalar
 
 class SalonModel:
-    def __init__(self,eta, wage, rho, iota, sigma_epsilon, rate, K, delta):
+    def __init__(self, eta, wage, rho, iota, sigma_epsilon, rate, K, delta, deltarange):
         # Create baseline parameters 
         self.eta = eta
         self.wage = wage
@@ -11,23 +12,23 @@ class SalonModel:
         self.rate = rate
         self.K = K
         self.delta = delta
+        self.deltarange = deltarange
 
-    def calc_profit(self,kappa):        
-        l = ((1-self.eta) * kappa/self.wage) **(1/self.eta)
-        Profit = kappa * l **(1-self.eta) - self.wage *l
-        return Profit
+    def calc_profit(self, kappa):        
+        l = ((1 - self.eta) * kappa / self.wage) ** (1 / self.eta)
+        profit = kappa * l ** (1 - self.eta) - self.wage * l
+        return profit
     
     def Findmaxprofit(self, kappa_values):
-        Max_profits = []
+        max_profits = []
+        maxprofit_kappa = None
+        max_profit = float('-inf')
         
         for kappa in kappa_values:
-            Profit = self.calc_profit(kappa)
-            Max_profits.append(Profit)
+            profit = self.calc_profit(kappa)
+            max_profits.append(profit)
         
-        Maxprofit_index = max(range(len(Max_profits)), key=Max_profits.__getitem__)
-        Maxprofit_kappa = kappa_values[Maxprofit_index]
-        
-        return Maxprofit_kappa
+        return maxprofit_kappa, max_profits
     
     def AR_schocks(self):
         np.random.seed(0)
@@ -36,7 +37,7 @@ class SalonModel:
     
     def adjust_l(self, kappa, l_prev, delta):
         l_star = ((1 - self.eta) * kappa / self.wage) ** (1 / self.eta)
-        if abs(l_prev - l_star) > self.delta:
+        if abs(l_prev - l_star) > delta:
             return l_star
         else:
             return l_prev
@@ -49,9 +50,9 @@ class SalonModel:
         for t in range(120):
             kappa = self.rho * np.log(kappa_prev) + shocks[t]
             kappa = np.exp(kappa)
-            l = self.adjust_l(kappa, l_prev, self.delta)
-            Profit = kappa * l ** (1 - self.eta) - self.wage * l - (1 if l != l_prev else 0) * self.iota
-            ex_postval += self.rate ** (-t) * Profit
+            l = ((1 - self.eta) * kappa / self.wage) ** (1 / self.eta)
+            profit = kappa * l ** (1 - self.eta) - self.wage * l - (1 if l != l_prev else 0) * self.iota
+            ex_postval += self.rate ** (-t) * profit
             l_prev = l
             kappa_prev = kappa
 
@@ -66,8 +67,8 @@ class SalonModel:
             kappa = self.rho * np.log(kappa_prev) + shocks[t]
             kappa = np.exp(kappa)
             l = self.adjust_l(kappa, l_prev, self.delta)
-            Profit = kappa * l ** (1 - self.eta) - self.wage * l - (1 if l != l_prev else 0) * self.iota
-            ex_postval_pol += self.rate ** (-t) * Profit
+            profit = kappa * l ** (1 - self.eta) - self.wage * l - (1 if l != l_prev else 0) * self.iota
+            ex_postval_pol += self.rate ** (-t) * profit
             l_prev = l
             kappa_prev = kappa
 
@@ -75,7 +76,7 @@ class SalonModel:
     
     def Compare(self):
         kappa_values = [1.0, 2.0]
-        Maxprofit_kappa = self.Findmaxprofit(kappa_values)
+        maxprofit_kappa, _ = self.Findmaxprofit(kappa_values)
         
         ex_postvalues = []
         ex_postvalues_pol = []
@@ -90,32 +91,20 @@ class SalonModel:
             ex_postvalues_pol.append(ex_post_value_policy_adjusted)
         
         H = np.mean(ex_postvalues)
-        Hpol = np.mean(ex_postvalues_pol)
+        H_pol = np.mean(ex_postvalues_pol)
         
-        Improvement = Hpol - H
+        improvement = H_pol - H
         
-        return H, Hpol, Improvement
-
-# Example usage
-eta = 0.5
-w = 1.0
-rho = 0.90
-iota = 0.01
-sigma_epsilon = 0.10
-R = (1 + 0.01) ** (1 / 12)
-K = 1000
-
-model = SalonModel(eta, w, rho, iota, sigma_epsilon, R, K)
-H, H_policy_adjusted, profitability_improvement = model.compare_profitability()
-
-print(f"The approximate ex ante expected value of the salon (H) is: {H}")
-print(f"The approximate ex ante expected value of the salon (H) with policy adjustment is: {H_policy_adjusted}")
-
-if profitability_improvement > 0:
-    print("The policy adjustment improves profitability.")
-else:
-    print("The policy adjustment does not improve profitability.")
-
-
-
-
+        return H, H_pol, improvement
+    
+    def optimize_delta(self):
+        def objective(delta):
+            self.delta = delta
+            _, H_pol, _ = self.Compare()
+            return -H_pol
+        
+        optimal_result = minimize_scalar(objective, bounds=self.deltarange, method='bounded')
+        optimal_delta = optimal_result.x
+        max_Hpol = -optimal_result.fun
+        
+        return optimal_delta, max_Hpol
