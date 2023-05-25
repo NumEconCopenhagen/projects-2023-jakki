@@ -50,7 +50,7 @@ class SalonModel:
             kappa = self.rho * np.log(kappa_prev) + shocks[t]
             kappa = np.exp(kappa)
             l = self.adjust_l(kappa, l_prev, self.delta)
-            Profit = kappa * l ** (1 - self.eta) - self.wage * l - (1 if l != ell_prev else 0) * self.iota
+            Profit = kappa * l ** (1 - self.eta) - self.wage * l - (1 if l != l_prev else 0) * self.iota
             ex_postval += self.rate ** (-t) * Profit
             l_prev = l
             kappa_prev = kappa
