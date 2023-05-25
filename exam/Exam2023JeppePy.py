@@ -5,7 +5,7 @@ from scipy import optimize
 import pandas as pd 
 import matplotlib.pyplot as plt
 
-class Q2:
+class model2:
 
     def __init__(self):
         """ setup model """
@@ -25,7 +25,7 @@ class Q2:
         
         #Dynamic model parameters
         par.time = 120
-        par.l0 = 0
+        par.lprev = 0
         par.kappaprev = 1
         par.K = 1000
         par.delta = 0.05
@@ -37,7 +37,7 @@ class Q2:
         par.l_star = ((1-par.eta) * par.kappa / par.wage)**(1/par.eta)
 
         #Storages to overwrite later and starting vals
-        opt.epsilon = np.zeros(len(par.time))
+        opt.epsilon = np.zeros(par.time)
         opt.ex_postval = 0
         opt.ex_postval_pol = 0
 
@@ -81,9 +81,9 @@ class Q2:
         for t in range(par.time):
             par.kappa = par.rho *np.log(par.kappaprev)+opt.epsilon[t]
             par.kappa = np.exp(par.kappa)
-            Profit = par.kappa * par.l **(1-par.eta)-par.wage*par.l-(1 if par.l != par.l0 else 0)*par.iota
+            Profit = par.kappa * par.l **(1-par.eta)-par.wage*par.l - np.where(1 if par.l != par.lprev else 0)*par.iota
             opt.ex_postval += par.rate**(-t)*Profit
-            par.l0 = par.l
+            par.lprev = par.l
             par.kappaprev = par.kappa
     
         for t in range(par.K):
@@ -100,10 +100,10 @@ class Q2:
         #Calls on the params 
         par = self.par 
         opt = self.opt
-        if abs(par.l0 - par.l_star) > par.delta:
+        if abs(par.lprev - par.l_star) > par.delta:
             return par.l_star
         else: 
-            return par.l0
+            return par.lprev
 
     def calc_ex_post_policy(self):
         #Calls on the params 
@@ -114,9 +114,9 @@ class Q2:
             par.kappa = par.rho * np.log(par.kappaprev) + [t]
             par.kappa = np.exp(par.kappa)
             par.l = self.adjustl()
-            Profit = par.kappa * par.l ** (1 - par.eta) - par.wage * par.l - (1 if par.l != par.l0 else 0) * par.iota
+            Profit = par.kappa * par.l ** (1 - par.eta) - par.wage * par.l - (1 if par.l != par.lprev else 0) * par.iota
             opt.ex_postval_pol += par.R ** (-t) * Profit
-            par.l0 = par.l
+            par.lprev = par.l
             par.kappaprev = par.kappa
 
 
