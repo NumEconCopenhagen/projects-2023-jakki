@@ -3,9 +3,9 @@ from types import SimpleNamespace
 
 import numpy as np
 
-class FlydendeValuta:
+class FlydendeValuta: #Creates a class to call upon in the notebook
 
-    def __init__(self):
+    def __init__(self): #Initializing a init function to contain parameters
         """ initialize the model """
 
         par = self.par = SimpleNamespace() # parameters
@@ -30,9 +30,9 @@ class FlydendeValuta:
         par.simT = 10_000 # length of simulation
 
         # d. calculate compound paramters
-        self.calc_compound_par()
+        self.calc_compound_par() 
 
-        # e. simulation
+        # e. Creating vectors to store results of the simulation 
         sim.y_hat = np.zeros(par.simT)
         sim.pi_hat = np.zeros(par.simT)
         sim.er = np.zeros(par.simT)
@@ -42,7 +42,7 @@ class FlydendeValuta:
         sim.c = np.zeros(par.simT)
 
         # f. data (numbers given in notebook)
-        datamoms.std_y = 2.0392
+        datamoms.std_y = 2.0392 
         datamoms.std_pi = 1.3841
         datamoms.corr_y_pi = 0.4757
         datamoms.autocorr_y = 0.3873
@@ -63,7 +63,7 @@ class FlydendeValuta:
         par = self.par
         sim = self.sim
 
-        # a. draw random  shock innovations
+        # a. Draw random shock innovations
         sim.x = np.random.normal(loc=0.0,scale=par.sigma_x,size=par.simT)
         sim.c = np.random.normal(loc=0.0,scale=par.sigma_c,size=par.simT)
 
