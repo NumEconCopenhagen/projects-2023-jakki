@@ -55,4 +55,62 @@ class ClassQ1:
         denominator = 2*par.omega_tilde
         return numerator / denominator
 
+class GriewankOptimizer:
+    def __init__(self, bounds, tol, warmup_iter, max_iter):
+        self.bounds = bounds
+        self.tol = tol
+        self.warmup_iter = warmup_iter
+        self.max_iter = max_iter
 
+    def griewank(self, x):
+        return self.griewank_(x[0], x[1])
+
+    def griewank_(self, x1, x2):
+        A = x1**2 / 4000 + x2**2 / 4000
+        B = np.cos(x1 / np.sqrt(1)) * np.cos(x2 / np.sqrt(2))
+        return A - B + 1
+
+    def refined_global_optimizer(self):
+        x_best = None
+        x0_values = []  # Store x0 values at each iteration
+
+        np.random.seed(2000)
+
+        for k in range(self.max_iter):
+            x = np.random.uniform(self.bounds[0], self.bounds[1], size=2)
+            x0 = np.zeros_like(x)  # Initialize x0 with zeros
+
+            if k >= self.warmup_iter:
+                chi = 0.5 * (2 / (1 + np.exp((k - self.warmup_iter) / 100)))
+                x0 = chi * x + (1 - chi) * x_best
+                res = minimize(self.griewank, x0, method='BFGS', tol=self.tol)
+            else:
+                res = minimize(self.griewank, x, method='BFGS', tol=self.tol)
+
+            x_best = res.x if k == 0 or res.fun < self.griewank(x_best) else x_best
+            x0_values.append(x0)  # Append x0 to the list
+
+            if self.griewank(x_best) < self.tol:
+                break
+
+            print(f"Iteration {k+1}: x0 = {x.round(4)}, x_best = {x_best.round(4)}")
+
+        return x_best, x0_values
+
+    def plot_results(self, x0_values):
+        iterations = np.arange(1, len(x0_values) + 1)
+        x0_values = np.array(x0_values)
+
+        plt.plot(iterations, x0_values[:, 0], label='x0[0]')
+        plt.plot(iterations, x0_values[:, 1], label='x0[1]')
+        plt.xlabel('Iteration')
+        plt.ylabel('x0')
+        plt.legend()
+        plt.title('Effective Initial Guesses (x0) vs. Iteration Counter')
+        plt.show()
+
+    def run_optimization(self):
+        result, x0_values = self.refined_global_optimizer()
+        print("Optimization Result:")
+        print(f"x_best = {result.round(4)}, f(x_best) = {self.griewank(result):.8f}")
+        self.plot_results(x0_values)
