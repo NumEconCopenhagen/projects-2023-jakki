@@ -5,7 +5,7 @@ from scipy import optimize
 import pandas as pd 
 import matplotlib.pyplot as plt
 
-class ModelQ2:
+class Q2:
 
     def __init__(self):
         """ setup model """
@@ -59,10 +59,10 @@ class ModelQ2:
 
         #Printing my findings 
         result1 = f'The maximum profit is {Profit_val}'
-        result2 = f'This happens when l is {Profit_l}'
-        result3 = f'When kappa is {par.kappa[Profit]}'
+        result2 = f'This happens when l is {Profit_l} & when kappa is {par.kappa[Profit]}'
+
         #Make it return our prints
-        return result1, result2, result3 
+        return result1, result2
     
     def AR_shocks(self):
         #Calls on the params
