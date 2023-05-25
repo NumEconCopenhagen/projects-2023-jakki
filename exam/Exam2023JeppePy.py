@@ -8,7 +8,7 @@ class SalonModel:
         self.rho = rho
         self.iota = iota
         self.sigma_epsilon = sigma_epsilon 
-        self.rate =rate
+        self.rate = rate
         self.K = K
         self.delta = delta
 
