@@ -4,6 +4,7 @@ from scipy.optimize import minimize
 import math
 import matplotlib.pyplot as plt
 from scipy import optimize
+from scipy.optimize import minimize_scalar
 
 class ClassQ1:
 
@@ -18,7 +19,9 @@ class ClassQ1:
         par.nu = 1/(2*(16**2))
         par.omega = 1.0
         par.tau = 0.30
+        par.tau_Q3 = 0.3432216374902929
         par.G = 5
+        par.government = 1
         par.omega_tilde = (1 - par.tau) * par.omega
         par.optimal_L_numerator = -par.kappa+math.sqrt(par.kappa**2+4*(par.alpha/par.nu)*par.omega_tilde**2)
         par.optimal_L_denominator = 2*par.omega_tilde
@@ -54,6 +57,32 @@ class ClassQ1:
         numerator = -par.kappa+math.sqrt(par.kappa**2+4*(par.alpha/par.nu)*par.omega_tilde**2)
         denominator = 2*par.omega_tilde
         return numerator / denominator
+    
+    def objective_function_q5_set1(self, L):
+        par = self.par
+        C = par.kappa + (1 - par.tau) * par.omega * L
+        value = (((par.alpha * C ** ((par.sigma_set1 - 1) / par.sigma_set1) + (1 - par.alpha) * par.government ** (
+                (par.sigma_set1 - 1) / par.sigma_set1)) ** (par.sigma_set1 / (par.sigma_set1 - 1))) ** (1 - par.rho_set1) - 1) / (
+                     1 - par.rho_set1) - par.nu * (L ** (1 + par.epsilon)) / (1 + par.epsilon)
+        return -value  # negative because we want to maximize
+    
+    def maximize_utility_q5_set1(self):
+        result_q5_set1 = minimize_scalar(self.objective_function_q5_set1, bounds=(0, 100), method='bounded')
+        return result_q5_set1.x
+    
+    # Setting up government constraint
+    def constraint(self, government, L_optimal):
+        par = self.par
+        return government - par.tau * par.omega * L_optimal * (1 - par.tau) * par.omega
+
+    # Function to minimize
+        def objective_function(government):
+            return abs(constraint(government, L_optimal))
+
+
+
+
+
 
 class GriewankOptimizer:
     def __init__(self, bounds, tol, warmup_iter, max_iter):
