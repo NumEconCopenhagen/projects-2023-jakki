@@ -87,8 +87,8 @@ class SalonModel:
             ex_post_value = self.calc_ex_postval(shocks)
             ex_postvalues.append(ex_post_value)
             
-            ex_post_value_policy_adjusted = self.calc_ex_postval_pol(shocks)
-            ex_postvalues_pol.append(ex_post_value_policy_adjusted)
+            ex_postval_pol = self.calc_ex_postval_pol(shocks)
+            ex_postvalues_pol.append(ex_postval_pol)
         
         H = np.mean(ex_postvalues)
         H_pol = np.mean(ex_postvalues_pol)
@@ -108,3 +108,52 @@ class SalonModel:
         max_Hpol = -optimal_result.fun
         
         return optimal_delta, max_Hpol
+    
+    def adjust_wage(self, optimal_delta):
+        _, H_pol, _ = self.Compare()
+        
+        if H_pol > 0:
+            self.wage *= (1 + optimal_delta)  # Increase the wage by a percentage of the optimal delta
+        else:
+            self.wage *= (1 - optimal_delta)  # Decrease the wage by a percentage of the optimal delta
+
+    def calc_ex_postval_newpol(self, shocks):
+        kappa_prev = 1.0
+        l_prev = 0.0
+        ex_postval_newpol = 0.0
+
+        for t in range(120):
+            kappa = self.rho * np.log(kappa_prev) + shocks[t]
+            kappa = np.exp(kappa)
+            l = ((1 - self.eta) * kappa / self.adjust_wage) ** (1 / self.eta)
+            profit = kappa * l ** (1 - self.eta) - self.adjust_wage * l - (1 if l != l_prev else 0) * self.iota
+            ex_postval_newpol += self.rate ** (-t) * profit
+            l_prev = l
+            kappa_prev = kappa
+
+        return ex_postval_newpol
+    
+    def Compare_two(self):
+        kappa_values = [1.0, 2.0]
+        maxprofit_kappa, _ = self.Findmaxprofit(kappa_values)
+        
+        ex_postvalues_pol = []
+        ex_postvalues_newpol = []
+        
+        for _ in range(self.K):
+            shocks = self.AR_schocks()
+            
+            ex_postval_pol = self.calc_ex_postval_pol(shocks)
+            ex_postvalues_pol.append(ex_postval_pol)
+
+            ex_postval_newpol = self.calc_ex_postval_newpol(shocks)
+            ex_postvalues_newpol.append(ex_postval_pol)
+            
+
+        H_pol = np.mean(ex_postvalues_pol)
+        H_newpol = np.mean(ex_postvalues_newpol)
+        improvement_new = H_pol - H_newpol
+        
+        return H_newpol, H_pol, improvement_new
+
+
