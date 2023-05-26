@@ -18,8 +18,8 @@ class ClassQ1:
         par.kappa = 1.0
         par.nu = 1/(2*(16**2))
         par.omega = 1.0
-        par.tau = 0.30
-        par.G = 5
+        par.tau = 0.34
+        par.G = par.tau * par.omega 
         par.omega_tilde = (1 - par.tau) * par.omega
         par.optimal_L_numerator = -par.kappa+math.sqrt(par.kappa**2+4*(par.alpha/par.nu)*par.omega_tilde**2)
         par.optimal_L_denominator = 2*par.omega_tilde
@@ -55,20 +55,26 @@ class ClassQ1:
         numerator = -par.kappa+math.sqrt(par.kappa**2+4*(par.alpha/par.nu)*par.omega_tilde**2)
         denominator = 2*par.omega_tilde
         return numerator / denominator
-
-    def solve_utility_q5_set1(self, L):
+    
+    def objective_function_q5_set1(self, L):
         par = self.par
+        C = par.kappa + (1 - par.tau) * par.omega * L
+        value = (((par.alpha * C**((par.sigma_set1-1)/par.sigma_set1) + (1 - par.alpha) * par.G**((par.sigma_set1-1)/par.sigma_set1))**(par.sigma_set1/(par.sigma_set1-1)))**(1-par.rho_set1) - 1) / (1 - par.rho_set1) - par.nu * (L**(1 + par.epsilon)) / (1 + par.epsilon)
+        return -value  # negative because we want to maximize
 
-        # a. consumption restriction
-        C = par.kappa + par.omega_tilde * L
+    def maximize_utility_q5_set1(self):
+        result_q5_set1 = minimize(self.objective_function_q5_set1, x0=0.0, method='BFGS')
+        return result_q5_set1.x
 
-        # b. utility
-        utility = (((par.alpha*C**(par.sigma_set1-1/par.sigma_set1)+(1-par.alpha)*par.G**(par.sigma_set1/1-par.sigma_set1))**(par.sigma_set1-1/par.sigma_set1))**(par.sigma_set1/par.sigma_set1-1))**(1-par.rho_set1)-1/1 - par.rho_set1
-
-        # c. disutility
-        disutility = par.nu*(L**(1+par.epsilon)/1+par.epsilon)
-
-        return utility - disutility
+    def objective_function_q5_set2(self,L):
+        par = self.par
+        C = par.kappa + (1 - par.tau) * par.omega * L
+        value = (((par.alpha * C**((par.sigma_set2-1)/par.sigma_set2) + (1 - par.alpha) * par.G**((par.sigma_set2-1)/par.sigma_set2))**(par.sigma_set2/(par.sigma_set2-1)))**(1-par.rho_set2) - 1) / (1 - par.rho_set2) - par.nu * (L**(1 + par.epsilon)) / (1 + par.epsilon)
+        return -value  # negative because we want to maximize
+    
+    def maximize_utility_q5_set2(self):
+        result_q5_set2 = minimize(self.objective_function_q5_set2, x0=0.0, method='BFGS')
+        return result_q5_set2.x
 
     
 
