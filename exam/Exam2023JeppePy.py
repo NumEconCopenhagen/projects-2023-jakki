@@ -1,135 +1,110 @@
-
-from types import SimpleNamespace
 import numpy as np
-from scipy import optimize
-import pandas as pd 
-import matplotlib.pyplot as plt
+from scipy.optimize import minimize_scalar
 
-class model2:
+class SalonModel:
+    def __init__(self, eta, wage, rho, iota, sigma_epsilon, rate, K, delta, deltarange):
+        # Create baseline parameters 
+        self.eta = eta
+        self.wage = wage
+        self.rho = rho
+        self.iota = iota
+        self.sigma_epsilon = sigma_epsilon 
+        self.rate = rate
+        self.K = K
+        self.delta = delta
+        self.deltarange = deltarange
 
-    def __init__(self):
-        """ setup model """
-
-        # Create namespaces
-        par = self.par = SimpleNamespace()
-        opt = self.opt = SimpleNamespace()
-        
-        # Baseline parameters 
-        par.eta = .5 
-        par.wage = 1   
-        par.kappa = np.linspace(1,2,2)
-        par.rho = .9
-        par.iota = .01
-        par.sigma = 0.1 
-        par.rate = (1+0.01)**(1/12)
-        
-        #Dynamic model parameters
-        par.time = 120
-        par.lprev = 0
-        par.kappaprev = 1
-        par.K = 1000
-        par.delta = 0.05
-        
-        # Defining variables
-        par.l = (((1-par.eta)*par.kappa)/par.wage)**(1/par.eta)
-        par.y = par.l
-        par.p = par.kappa*par.y**(-par.eta)
-        par.l_star = ((1-par.eta) * par.kappa / par.wage)**(1/par.eta)
-
-        #Storages to overwrite later and starting vals
-        opt.epsilon = np.zeros(par.time)
-        opt.ex_postval = 0
-        opt.ex_postval_pol = 0
-
-        #Vectors for storage 
-        opt.ex_postvals = [] 
-        opt.ex_postvals_pol = []
-
-    def calculate_profit(self):
-
-        #Calls on the Params
-        par = self.par
-        opt = self.opt
-        #Sets up the function
-        Pi = par.kappa*par.l**(1-par.eta)-par.wage*par.l
-        #Finding max value for Pi and l
-        Profit = np.argmax(Pi) #Finds the max value of Pi given inputs 
-        Profit_l = par.l[Profit] #Finding the subsequential highest value of l based on Profit
-        Profit_val = Pi[Profit] #Finding the highest value of Pi. Max profit
-
-        #Printing my findings 
-        result1 = f'The maximum profit is {Profit_val}'
-        result2 = f'This happens when l is {Profit_l} & when kappa is {par.kappa[Profit]}'
-
-        #Make it return our prints
-        return result1, result2
+    def calc_profit(self, kappa):        
+        l = ((1 - self.eta) * kappa / self.wage) ** (1 / self.eta)
+        profit = kappa * l ** (1 - self.eta) - self.wage * l
+        return profit
     
-    def AR_shocks(self):
-        #Calls on the params
-        par = self.par
-        opt = self.opt
-        #Creating shocks 
-        np.random.seed(117)
-        opt.epsilon = np.random.normal(-.5*par.sigma**2, par.sigma, size=par.time)
-        return opt.epsilon 
-    
-    def calc_ex_post(self):
-        #Calls on the params
-        par = self.par
-        opt = self.opt
+    def Findmaxprofit(self, kappa_values):
+        max_profits = []
+        maxprofit_kappa = None
+        max_profit = float('-inf')
         
-        for t in range(par.time):
-            par.kappa = par.rho *np.log(par.kappaprev)+opt.epsilon[t]
-            par.kappa = np.exp(par.kappa)
-            condition = par.l != par.lprev
-            Profit = par.kappa * par.l **(1-par.eta)-par.wage*par.l - np.where(condition, 1,0)*par.iota
-            opt.ex_postval += par.rate**(-t)*Profit
-            par.lprev = par.l
-            par.kappaprev = par.kappa
-    
-        for t in range(par.K):
-            opt.epsilon = self.AR_shocks()
-            opt.ex_postval = self.calc_ex_post()
-            opt.ex_postvals.append(opt.ex_postval)
-
-        H = np.mean(opt.ex_postvals)
-        print_result = print(f"The approximate ex ante expected value of the salon (H) is: {H}")
+        for kappa in kappa_values:
+            profit = self.calc_profit(kappa)
+            max_profits.append(profit)
         
-        return print_result
-
-    def adjustl(self): 
-        #Calls on the params 
-        par = self.par 
-        opt = self.opt
-        if abs(par.lprev - par.l_star) > par.delta:
-            return par.l_star
-        else: 
-            return par.lprev
-
-    def calc_ex_post_policy(self):
-        #Calls on the params 
-        par = self.par 
-        opt = self.opt
-
-        for t in range(par.time):
-            par.kappa = par.rho * np.log(par.kappaprev) + [t]
-            par.kappa = np.exp(par.kappa)
-            par.l = self.adjustl()
-            Profit = par.kappa * par.l ** (1 - par.eta) - par.wage * par.l - (1 if par.l != par.lprev else 0) * par.iota
-            opt.ex_postval_pol += par.R ** (-t) * Profit
-            par.lprev = par.l
-            par.kappaprev = par.kappa
-
-
-        for t in range(par.K):
-            opt.epsilon = self.AR_shocks()
-            opt.ex_postval_pol = self.calc_ex_post_policy
-            opt.ex_postval
+        return maxprofit_kappa, max_profits
     
+    def AR_schocks(self):
+        np.random.seed(0)
+        shocks = np.random.normal(-0.5 * self.sigma_epsilon ** 2, self.sigma_epsilon, size=120)
+        return shocks
     
+    def adjust_l(self, kappa, l_prev, delta):
+        l_star = ((1 - self.eta) * kappa / self.wage) ** (1 / self.eta)
+        if abs(l_prev - l_star) > delta:
+            return l_star
+        else:
+            return l_prev
+    
+    def calc_ex_postval(self, shocks):
+        kappa_prev = 1.0
+        l_prev = 0.0
+        ex_postval = 0.0
 
+        for t in range(120):
+            kappa = self.rho * np.log(kappa_prev) + shocks[t]
+            kappa = np.exp(kappa)
+            l = ((1 - self.eta) * kappa / self.wage) ** (1 / self.eta)
+            profit = kappa * l ** (1 - self.eta) - self.wage * l - (1 if l != l_prev else 0) * self.iota
+            ex_postval += self.rate ** (-t) * profit
+            l_prev = l
+            kappa_prev = kappa
 
+        return ex_postval
+    
+    def calc_ex_postval_pol(self, shocks):
+        kappa_prev = 1.0
+        l_prev = 0.0
+        ex_postval_pol = 0.0
 
+        for t in range(120):
+            kappa = self.rho * np.log(kappa_prev) + shocks[t]
+            kappa = np.exp(kappa)
+            l = self.adjust_l(kappa, l_prev, self.delta)
+            profit = kappa * l ** (1 - self.eta) - self.wage * l - (1 if l != l_prev else 0) * self.iota
+            ex_postval_pol += self.rate ** (-t) * profit
+            l_prev = l
+            kappa_prev = kappa
 
-
+        return ex_postval_pol
+    
+    def Compare(self):
+        kappa_values = [1.0, 2.0]
+        maxprofit_kappa, _ = self.Findmaxprofit(kappa_values)
         
+        ex_postvalues = []
+        ex_postvalues_pol = []
+        
+        for _ in range(self.K):
+            shocks = self.AR_schocks()
+            
+            ex_post_value = self.calc_ex_postval(shocks)
+            ex_postvalues.append(ex_post_value)
+            
+            ex_post_value_policy_adjusted = self.calc_ex_postval_pol(shocks)
+            ex_postvalues_pol.append(ex_post_value_policy_adjusted)
+        
+        H = np.mean(ex_postvalues)
+        H_pol = np.mean(ex_postvalues_pol)
+        
+        improvement = H_pol - H
+        
+        return H, H_pol, improvement
+    
+    def optimize_delta(self):
+        def objective(delta):
+            self.delta = delta
+            _, H_pol, _ = self.Compare()
+            return -H_pol
+        
+        optimal_result = minimize_scalar(objective, bounds=self.deltarange, method='bounded')
+        optimal_delta = optimal_result.x
+        max_Hpol = -optimal_result.fun
+        
+        return optimal_delta, max_Hpol
