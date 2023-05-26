@@ -5,7 +5,7 @@ from scipy.optimize import minimize_scalar
 import math
 import matplotlib.pyplot as plt
 from scipy import optimize
-from scipy.optimize import minimize_scalar
+
 
 class ClassQ1:
 
@@ -60,6 +60,7 @@ class ClassQ1:
         return numerator / denominator
     
 class SalonModel:
+    #Creates a function to call upon for variables
     def __init__(self, eta, wage, rho, iota, sigma_epsilon, rate, K, delta, deltarange):
         # Create baseline parameters 
         self.eta = eta
@@ -71,52 +72,54 @@ class SalonModel:
         self.K = K
         self.delta = delta
         self.deltarange = deltarange
-
+        
+    #The profit function written
     def calc_profit(self, kappa):        
-        l = ((1 - self.eta) * kappa / self.wage) ** (1 / self.eta)
+        l = ((1 - self.eta) * kappa / self.wage) ** (1 / self.eta) #Defines l locally 
         profit = kappa * l ** (1 - self.eta) - self.wage * l
         return profit
     
-    def Findmaxprofit(self, kappa_values):
-        max_profits = []
-        maxprofit_kappa = None
-        max_profit = float('-inf')
+    #For different values of kappa it loops over all outcomes of profit
+    def Findmaxprofit(self, kappa_values): #Inputs are baseline parameters and kappa
+        max_profits = [] #Creates an empty list to store results
         
-        for kappa in kappa_values:
-            profit = self.calc_profit(kappa)
-            max_profits.append(profit)
+        for kappa in kappa_values: #A loop over all values of kappa
+            profit = self.calc_profit(kappa) #Calls on the profitfunction
+            max_profits.append(profit) #Collects the results in a list
         
-        return maxprofit_kappa, max_profits
+        return max_profits
     
-    def AR_schocks(self):
-        np.random.seed(0)
-        shocks = np.random.normal(-0.5 * self.sigma_epsilon ** 2, self.sigma_epsilon, size=120)
+    def AR_schocks(self): #Creates shocks for the log kappa 
+        np.random.seed(0) #Random seed  to make sure the results are consistent
+        shocks = np.random.normal(-0.5 * self.sigma_epsilon ** 2, self.sigma_epsilon, size=120) #Creates the shokcs itself
         return shocks
     
-    def adjust_l(self, kappa, l_prev, delta):
-        l_star = ((1 - self.eta) * kappa / self.wage) ** (1 / self.eta)
-        if abs(l_prev - l_star) > delta:
+    def adjust_l(self, kappa, l_prev, delta): #Policy function
+        l_star = ((1 - self.eta) * kappa / self.wage) ** (1 / self.eta) 
+        if abs(l_prev - l_star) > delta: #If the absoulute value of the difference is larger than Delta, we return l_star
             return l_star
         else:
-            return l_prev
+            return l_prev #if not we rettun the previous l
     
-    def calc_ex_postval(self, shocks):
+    def calc_ex_postval(self, shocks): #Calculating ex post values. Needs the shocks as input
+        #Locally storing baseline parameters 
         kappa_prev = 1.0
         l_prev = 0.0
         ex_postval = 0.0
 
-        for t in range(120):
+        for t in range(120): 
             kappa = self.rho * np.log(kappa_prev) + shocks[t]
-            kappa = np.exp(kappa)
-            l = ((1 - self.eta) * kappa / self.wage) ** (1 / self.eta)
-            profit = kappa * l ** (1 - self.eta) - self.wage * l - (1 if l != l_prev else 0) * self.iota
-            ex_postval += self.rate ** (-t) * profit
-            l_prev = l
-            kappa_prev = kappa
+            kappa = np.exp(kappa) #Takes the exponential in order to plug it correctly into the function 
+            l = ((1 - self.eta) * kappa / self.wage) ** (1 / self.eta) #Normal l
+            Profit = kappa * l ** (1 - self.eta) - self.wage * l - (1 if l != l_prev else 0) * self.iota #Profit function 
+            ex_postval += self.rate ** (-t) * Profit #For each loop the value is increased 
+            l_prev = l #Resets l_prev so it corrects before next iteration
+            kappa_prev = kappa #Reset kappa_prev so it correct before next iteration
 
         return ex_postval
     
-    def calc_ex_postval_pol(self, shocks):
+    def calc_ex_postval_pol(self, shocks): #We do the same thing. 
+        #locally storing baseline parameters
         kappa_prev = 1.0
         l_prev = 0.0
         ex_postval_pol = 0.0
@@ -124,46 +127,46 @@ class SalonModel:
         for t in range(120):
             kappa = self.rho * np.log(kappa_prev) + shocks[t]
             kappa = np.exp(kappa)
-            l = self.adjust_l(kappa, l_prev, self.delta)
-            profit = kappa * l ** (1 - self.eta) - self.wage * l - (1 if l != l_prev else 0) * self.iota
-            ex_postval_pol += self.rate ** (-t) * profit
+            l = self.adjust_l(kappa, l_prev, self.delta) #Notice we plug in our policy function 
+            Profit = kappa * l ** (1 - self.eta) - self.wage * l - (1 if l != l_prev else 0) * self.iota
+            ex_postval_pol += self.rate ** (-t) * Profit
             l_prev = l
             kappa_prev = kappa
 
         return ex_postval_pol
     
-    def Compare(self):
-        kappa_values = [1.0, 2.0]
-        maxprofit_kappa, _ = self.Findmaxprofit(kappa_values)
+    def Compare(self): #We then want to compare the two different policies.
+        ex_postvalues = [] #Creates empty list to store future results
+        ex_postvalues_pol = [] #Creates empty list to store future results 
         
-        ex_postvalues = []
-        ex_postvalues_pol = []
-        
-        for _ in range(self.K):
-            shocks = self.AR_schocks()
+        for _ in range(self.K): #For each loop we call upon prior functions and store the results in lists
+            shocks = self.AR_schocks() #Call upon earlier function, because it is needed as an input
             
-            ex_post_value = self.calc_ex_postval(shocks)
-            ex_postvalues.append(ex_post_value)
+            ex_post_value = self.calc_ex_postval(shocks) #Calculates values before the policy
+            ex_postvalues.append(ex_post_value) #Stores it in the empty list 
             
-            ex_post_value_policy_adjusted = self.calc_ex_postval_pol(shocks)
-            ex_postvalues_pol.append(ex_post_value_policy_adjusted)
-        
-        H = np.mean(ex_postvalues)
+            ex_postval_pol = self.calc_ex_postval_pol(shocks) #Calculates values after the policy
+            ex_postvalues_pol.append(ex_postval_pol) #Stores it in the empty list
+        #Takes the mean of both list full of values 
+        H = np.mean(ex_postvalues) 
         H_pol = np.mean(ex_postvalues_pol)
-        
+        #Finds the difference
         improvement = H_pol - H
         
         return H, H_pol, improvement
     
-    def optimize_delta(self):
-        def objective(delta):
+    def optimize_delta(self): #We now want to optimize the function
+        def objective(delta): #Creates the objective we want to minimize.
             self.delta = delta
-            _, H_pol, _ = self.Compare()
-            return -H_pol
-        
-        optimal_result = minimize_scalar(objective, bounds=self.deltarange, method='bounded')
-        optimal_delta = optimal_result.x
-        max_Hpol = -optimal_result.fun
+            _, H_pol, _ = self.Compare() #Returns h_pol from the Compare function. 
+            return -H_pol #In negative, because Python will always minimize
+    
+        #We then call the optimizer(minimizer) which only look at a single parameter, why we use scalar. 
+        #The objective is the function above, bounds are different values of delta 
+        #and we use the method bounded as it is good for scalar minimizing
+        optimal_result = minimize_scalar(objective, bounds=self.deltarange, method='bounded') 
+        optimal_delta = optimal_result.x #We then obtain the x value. In this case the delta
+        max_Hpol = -optimal_result.fun #We then obtain the y value
         
         return optimal_delta, max_Hpol
     
